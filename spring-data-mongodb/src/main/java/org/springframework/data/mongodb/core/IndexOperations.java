@@ -20,7 +20,6 @@ import java.util.List;
 import org.springframework.data.mongodb.core.index.IndexDefinition;
 import org.springframework.data.mongodb.core.index.IndexInfo;
 
-
 /**
  * Index operations on a collection.
  * 
@@ -51,7 +50,10 @@ public interface IndexOperations {
 
 	/**
 	 * Clears all indices that have not yet been applied to this collection.
+	 * 
+	 * @deprecated no replacement as the MongoDB Java driver drops that feature with 3.0.
 	 */
+	@Deprecated
 	void resetIndexCache();
 
 	/**
