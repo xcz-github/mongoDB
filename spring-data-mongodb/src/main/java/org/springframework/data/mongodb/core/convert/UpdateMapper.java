@@ -15,11 +15,18 @@
  */
 package org.springframework.data.mongodb.core.convert;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import org.springframework.core.convert.converter.Converter;
+import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.data.mapping.Association;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.mongodb.core.mapping.MongoPersistentEntity;
@@ -42,6 +49,13 @@ import com.mongodb.DBObject;
  * @author Christoph Strobl
  */
 public class UpdateMapper extends QueryMapper {
+
+	@SuppressWarnings({ "rawtypes", "serial" })//
+	private static final Map<String, Set<Class>> RESTRICTED_TYPES_PER_KEYWORD = new HashMap<String, Set<Class>>() {
+		{
+			put("$min", new HashSet<Class>(Arrays.<Class> asList(BigDecimal.class, BigInteger.class)));
+		}
+	};
 
 	private final MongoConverter converter;
 
@@ -113,6 +127,34 @@ public class UpdateMapper extends QueryMapper {
 		}
 
 		return createMapEntry(field, value);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.mongodb.core.convert.QueryMapper#getMappedKeyword(org.springframework.data.mongodb.core.convert.QueryMapper.Keyword, org.springframework.data.mongodb.core.mapping.MongoPersistentEntity)
+	 */
+	protected DBObject getMappedKeyword(Keyword keyword, MongoPersistentEntity<?> entity) {
+
+		assertKeywordCanBeAppliedOnProperty(keyword, entity);
+		return super.getMappedKeyword(keyword, entity);
+	}
+
+	private void assertKeywordCanBeAppliedOnProperty(Keyword keyword, MongoPersistentEntity<?> entity) {
+
+		if (RESTRICTED_TYPES_PER_KEYWORD.containsKey(keyword.getKey()) && keyword.getValue() instanceof DBObject) {
+
+			for (String key : ((DBObject) keyword.getValue()).keySet()) {
+
+				Field field = createPropertyField(entity, key, converter.getMappingContext());
+
+				if (field != null && field.getProperty() != null) {
+					if (RESTRICTED_TYPES_PER_KEYWORD.get(keyword.getKey()).contains(field.getProperty().getActualType())) {
+						throw new InvalidDataAccessApiUsageException(String.format("%s is not supported for %s", field
+								.getProperty().getActualType(), keyword.getKey()));
+					}
+				}
+			}
+		}
 	}
 
 	/*
