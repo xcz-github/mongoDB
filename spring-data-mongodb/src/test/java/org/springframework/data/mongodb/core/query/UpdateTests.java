@@ -19,6 +19,7 @@ import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.*;
 
 import java.util.Collections;
+import java.util.Date;
 import java.util.Map;
 
 import org.joda.time.DateTime;
@@ -483,5 +484,46 @@ public class UpdateTests {
 	@Test(expected = IllegalArgumentException.class)
 	public void pushShouldThrowExceptionWhenGivenNegativePosition() {
 		new Update().push("foo").atPosition(-1).each("booh");
+	}
+
+	/**
+	 * @see DATAMONGO-941
+	 */
+	@Test(expected = IllegalArgumentException.class)
+	public void minWithNumberShouldThrowExceptionWhenGivenNullValue() {
+		new Update().min("key", (Number) null);
+	}
+
+	/**
+	 * @see DATAMONGO-941
+	 */
+	@Test(expected = IllegalArgumentException.class)
+	public void minWithDateShouldThrowExceptionWhenGivenNullValue() {
+		new Update().min("key", (Date) null);
+	}
+
+	/**
+	 * @see DATAMONGO-941
+	 */
+	@Test
+	public void minShouldBeAppliedCorrectly() {
+
+		Update update = new Update().min("key", 10);
+
+		assertThat(update.getUpdateObject(), equalTo(new BasicDBObjectBuilder().add("$min", new BasicDBObject("key", 10))
+				.get()));
+	}
+
+	/**
+	 * @see DATAMONGO-941
+	 */
+	@Test
+	public void minShouldBeAppliedToMultipleFieldsCorrectly() {
+
+		Update update = new Update().min("foo", 10).min("bar", 20);
+
+		assertThat(update.getUpdateObject(),
+				equalTo(new BasicDBObjectBuilder().add("$min", new BasicDBObjectBuilder().add("foo", 10).add("bar", 20).get())
+						.get()));
 	}
 }

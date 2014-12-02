@@ -20,6 +20,7 @@ import static org.springframework.util.ObjectUtils.*;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -334,6 +335,38 @@ public class Update {
 	 */
 	public BitwiseOperatorBuilder bitwise(String key) {
 		return new BitwiseOperatorBuilder(this, key);
+	}
+
+	/**
+	 * Update given key to value if the given value is less than the current value of the field.
+	 * 
+	 * @see http://docs.mongodb.org/manual/reference/operator/update/min/
+	 * @param key must not be {@literal null}.
+	 * @param value must not be {@literal null}.
+	 * @return
+	 * @since 1.7
+	 */
+	public Update min(String key, Number value) {
+
+		Assert.notNull(value, "Value for min operation must not be 'null'.");
+		addMultiFieldOperation("$min", key, value);
+		return this;
+	}
+
+	/**
+	 * Update given key to value if the given date is before than the current date value of the field.
+	 * 
+	 * @see http://docs.mongodb.org/manual/reference/operator/update/min/
+	 * @param key must not be {@literal null}.
+	 * @param value must not be {@literal null}.
+	 * @return
+	 * @since 1.7
+	 */
+	public Update min(String key, Date value) {
+
+		Assert.notNull(value, "Value for min operation must not be 'null'.");
+		addMultiFieldOperation("$min", key, value);
+		return this;
 	}
 
 	public DBObject getUpdateObject() {
