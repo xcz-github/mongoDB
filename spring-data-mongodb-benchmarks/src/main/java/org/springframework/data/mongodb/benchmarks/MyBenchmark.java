@@ -104,7 +104,6 @@ public class MyBenchmark {
 	}
 
 	@Benchmark
-	// @Test
 	public void writeSourceWithAddress() {
 		converter.write(withAddress, new BasicDBObject());
 	}
