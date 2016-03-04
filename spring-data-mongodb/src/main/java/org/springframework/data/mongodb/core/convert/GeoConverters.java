@@ -117,6 +117,10 @@ abstract class GeoConverters {
 
 			Assert.isTrue(source.keySet().size() == 2, "Source must contain 2 elements");
 
+			if (source.containsField("type")) {
+				return DbObjectToGeoJsonPointConverter.INSTANCE.convert(source);
+			}
+
 			return new Point((Double) source.get("x"), (Double) source.get("y"));
 		}
 	}
@@ -590,6 +594,10 @@ abstract class GeoConverters {
 
 			if (source == null) {
 				return null;
+			}
+
+			if (source.get("type") == null) {
+				return new GeoJsonPoint(DbObjectToPointConverter.INSTANCE.convert(source));
 			}
 
 			Assert.isTrue(ObjectUtils.nullSafeEquals(source.get("type"), "Point"),
