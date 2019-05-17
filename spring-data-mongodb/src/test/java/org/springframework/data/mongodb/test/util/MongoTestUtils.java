@@ -45,10 +45,31 @@ public class MongoTestUtils {
 	 * @param client must not be {@literal null}.
 	 */
 	public static MongoCollection<Document> createOrReplaceCollection(String dbName, String collectionName,
+			com.mongodb.client.MongoClient client) {
+
+		MongoDatabase database = client.getDatabase(dbName).withWriteConcern(WriteConcern.MAJORITY)
+				.withReadPreference(ReadPreference.primary());
+
+		return createOrReplace(database, collectionName);
+	}
+
+	/**
+	 * Create a {@link com.mongodb.client.MongoCollection} if it does not exist, or drop and recreate it if it does.
+	 *
+	 * @param dbName must not be {@literal null}.
+	 * @param collectionName must not be {@literal null}.
+	 * @param client must not be {@literal null}.
+	 */
+	public static MongoCollection<Document> createOrReplaceCollection(String dbName, String collectionName,
 			com.mongodb.MongoClient client) {
 
 		MongoDatabase database = client.getDatabase(dbName).withWriteConcern(WriteConcern.MAJORITY)
 				.withReadPreference(ReadPreference.primary());
+
+		return createOrReplace(database, collectionName);
+	}
+
+	private static MongoCollection<Document> createOrReplace(MongoDatabase database, String collectionName) {
 
 		boolean collectionExists = database.listCollections().filter(new Document("name", collectionName)).first() != null;
 
