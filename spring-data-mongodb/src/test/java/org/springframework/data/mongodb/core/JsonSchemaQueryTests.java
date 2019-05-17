@@ -23,6 +23,10 @@ import static org.springframework.data.mongodb.core.schema.JsonSchemaProperty.*;
 import lombok.Data;
 import reactor.test.StepVerifier;
 
+import java.util.List;
+
+import org.bson.Document;
+import org.bson.types.ObjectId;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -31,12 +35,12 @@ import org.junit.Test;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Field;
 import org.springframework.data.mongodb.core.schema.MongoJsonSchema;
+import org.springframework.data.mongodb.test.util.MongoTestUtils;
 import org.springframework.data.mongodb.test.util.MongoVersionRule;
 import org.springframework.data.util.Version;
 
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
-
 
 /**
  * @author Christoph Strobl
@@ -54,7 +58,7 @@ public class JsonSchemaQueryTests {
 
 	@BeforeClass
 	public static void beforeClass() {
-		 client = MongoClients.create();
+		client = MongoClients.create();
 	}
 
 	@Before
@@ -90,7 +94,7 @@ public class JsonSchemaQueryTests {
 		template.save(roseSpringHeart);
 		template.save(kazmardBoombub);
 	}
-	
+
 	@AfterClass
 	public static void afterClass() {
 		if (client != null) {
@@ -112,11 +116,12 @@ public class JsonSchemaQueryTests {
 
 		MongoJsonSchema schema = MongoJsonSchema.builder().required("address").build();
 
-		com.mongodb.reactivestreams.client.MongoClient mongoClient = com.mongodb.reactivestreams.client.MongoClients.create();
+		com.mongodb.reactivestreams.client.MongoClient mongoClient = com.mongodb.reactivestreams.client.MongoClients
+				.create();
 
 		StepVerifier.create(new ReactiveMongoTemplate(mongoClient, DATABASE_NAME)
 				.find(query(matchingDocumentStructure(schema)), Person.class)).expectNextCount(2).verifyComplete();
-		
+
 		mongoClient.close();
 	}
 
@@ -197,6 +202,70 @@ public class JsonSchemaQueryTests {
 
 		assertThat(template.find(query(where("value").type(Type.intType(), Type.stringType())), Person.class))
 				.containsExactlyInAnyOrder(jellyBelly, kazmardBoombub);
+	}
+
+	@Test // DATAMONGO-2266
+	public void datamongo2266() {
+
+		MongoTestUtils.createOrReplaceCollection(DATABASE_NAME, "ip", client);
+
+		Document valid = new Document("_id", new ObjectId()) //
+				.append("name", "ABC_AAA_N001_VER_1_A") //
+				.append("provider", new Document("_id", new ObjectId()) //
+						.append("name", "Provider Name") //
+						.append("internal", true)//
+				) //
+				.append("discriminator", "type1") //
+				.append("user", new Document("_id", new ObjectId()) //
+						.append("email", "dana.maria@test.com") //
+						.append("name", "Dana Maria") //
+				) //
+				.append("_class", "com.micad.services.mongo.model.Ip");
+
+		Document invalid = new Document("_id", new ObjectId()) //
+				.append("name", "invalid") //
+				.append("provider", new Document("_id", new ObjectId()) //
+						.append("name", "Provider Name") //
+				// .append("internal", true)
+				) //
+				.append("discriminator", "type1") //
+				.append("user", new Document("_id", new ObjectId()) //
+						.append("email", "dana.maria@test.com") //
+						.append("name", "Dana Maria") //
+				) //
+				.append("_class", "com.micad.services.mongo.model.Ip");
+
+		template.save(valid, "ip");
+		template.save(invalid, "ip");
+
+		List<Document> result = template.find(query(matchingDocumentStructure(getIpSchema())), Document.class, "ip");
+		assertThat(result).containsExactly(valid);
+	}
+
+	private MongoJsonSchema getIpSchema() {
+
+		return MongoJsonSchema.builder().required("name", "provider", "discriminator", "user") //
+				.properties( //
+						string("id"), //
+						string("name"), //
+						string("discriminator"), //
+						object("provider") //
+								.required("name", "internal") //
+								.properties( //
+										string("id"), //
+										string("name"), //
+										bool("internal") //
+								) //
+								.additionalProperties(true),
+						object("user") //
+								.required("name", "email") //
+								.properties( //
+										string("id"), //
+										string("name"), //
+										string("email") //
+								).additionalProperties(true) //
+				) //
+				.additionalProperties(true).build();
 	}
 
 	@Data
