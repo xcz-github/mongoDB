@@ -11,4 +11,12 @@
 		<mongo:client-options />
 	</mongo:mongo-client>
 
+	<mongo:db-factory id="with-connection-string" connection-string="mongodb://username:password@localhost/database" />
+
+	<mongo:db-factory id="with-mongo-client-client-ref" mongo-client-ref="mongo.mongo-client" write-concern="SAFE" />
+
+    <mongo:mongo.mongo-client id="mongo.mongo-client">
+        <mongo:client-settings application-name="spring-data-mongodb"/>
+    </mongo:mongo.mongo-client>
+
 </beans>

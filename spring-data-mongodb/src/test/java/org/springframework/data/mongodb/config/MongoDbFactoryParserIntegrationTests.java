@@ -163,6 +163,28 @@ public class MongoDbFactoryParserIntegrationTests {
 		assertThat(argument).isNotNull();
 	}
 
+	@Test // DATAMONGO-2384
+	public void usesConnectionStringToCreateClientClient() {
+
+		ClassPathXmlApplicationContext ctx = new ClassPathXmlApplicationContext("namespace/db-factory-bean.xml");
+
+		MongoDbFactory dbFactory = ctx.getBean("with-connection-string", MongoDbFactory.class);
+		assertThat(dbFactory).isInstanceOf(SimpleMongoClientDbFactory.class);
+		assertThat(ReflectionTestUtils.getField(dbFactory, "mongoClient"))
+				.isInstanceOf(com.mongodb.client.MongoClient.class);
+	}
+
+	@Test // DATAMONGO-2384
+	public void usesMongoClientClientRef() {
+
+		ClassPathXmlApplicationContext ctx = new ClassPathXmlApplicationContext("namespace/db-factory-bean.xml");
+
+		MongoDbFactory dbFactory = ctx.getBean("with-mongo-client-client-ref", MongoDbFactory.class);
+		assertThat(dbFactory).isInstanceOf(SimpleMongoClientDbFactory.class);
+		assertThat(ReflectionTestUtils.getField(dbFactory, "mongoClient"))
+				.isInstanceOf(com.mongodb.client.MongoClient.class);
+	}
+
 	private static void assertWriteConcern(ClassPathXmlApplicationContext ctx, WriteConcern expectedWriteConcern) {
 
 		SimpleMongoDbFactory dbFactory = ctx.getBean("first", SimpleMongoDbFactory.class);
