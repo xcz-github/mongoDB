@@ -46,6 +46,22 @@ pipeline {
 						}
 					}
 				}
+				stage('Publish JDK 11 + MongoDB 4.2') {
+					when {
+						changeset "ci/openjdk8-mongodb-4.2/**"
+					}
+					agent { label 'data' }
+					options { timeout(time: 30, unit: 'MINUTES') }
+
+					steps {
+						script {
+							def image = docker.build("springci/spring-data-openjdk11-with-mongodb-4.2.0", "ci/openjdk11-mongodb-4.2/")
+							docker.withRegistry('', 'hub.docker.com-springbuildmaster') {
+								image.push()
+							}
+						}
+					}
+				}
 				stage('Publish JDK 14 + MongoDB 4.2') {
 					when {
 						changeset "ci/openjdk14-mongodb-4.2/**"
@@ -65,7 +81,7 @@ pipeline {
 			}
 		}
 
-		stage("test: baseline (jdk8)") {
+		stage("test: mongodb 4.2.0 (jdk8)") {
 			when {
 				anyOf {
 					branch 'master'
@@ -119,10 +135,10 @@ pipeline {
 					}
 				}
 
-				stage("test: mongodb 4.2 (jdk8)") {
+				stage("test: mongodb 4.2.0 (jdk11)") {
 					agent {
 						docker {
-							image 'springci/spring-data-openjdk8-with-mongodb-4.2.0:latest'
+							image 'springci/spring-data-openjdk11-with-mongodb-4.2.0:latest'
 							label 'data'
 							args '-v $HOME:/tmp/jenkins-home'
 						}
@@ -135,11 +151,11 @@ pipeline {
 						sh 'sleep 10'
 						sh 'mongo --eval "rs.initiate({_id: \'rs0\', members:[{_id: 0, host: \'127.0.0.1:27017\'}]});"'
 						sh 'sleep 15'
-						sh 'MAVEN_OPTS="-Duser.name=jenkins -Duser.home=/tmp/jenkins-home" ./mvnw clean dependency:list test -Duser.name=jenkins -Dsort -U -B'
+						sh 'MAVEN_OPTS="-Duser.name=jenkins -Duser.home=/tmp/jenkins-home" ./mvnw -Pjava11 clean dependency:list test -Duser.name=jenkins -Dsort -U -B'
 					}
 				}
 
-				stage("test: baseline (jdk14)") {
+				stage("test: mongodb 4.2.0 (jdk14)") {
 					agent {
 						docker {
 							image 'springci/spring-data-openjdk14-with-mongodb-4.2.0:latest'
