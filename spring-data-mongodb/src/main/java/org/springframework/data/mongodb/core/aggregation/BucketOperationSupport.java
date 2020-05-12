@@ -159,6 +159,8 @@ public abstract class BucketOperationSupport<T extends BucketOperationSupport<T,
 		return document;
 	}
 
+
+
 	/* (non-Javadoc)
 	 * @see org.springframework.data.mongodb.core.aggregation.FieldsExposingAggregationOperation#getFields()
 	 */

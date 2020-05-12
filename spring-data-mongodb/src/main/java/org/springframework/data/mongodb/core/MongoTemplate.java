@@ -2149,8 +2149,9 @@ public class MongoTemplate implements MongoOperations, ApplicationContextAware, 
 
 			if(ResultOptions.SKIP.equals(options.resultOptions())) {
 
+
 				// toCollection only allowed for $out and $merge if those are the last stages
-				if(pipeline.get(pipeline.size()-1).containsKey("$out") || pipeline.get(pipeline.size()-1).containsKey("$merge")) {
+				if(aggregation.getPipeline().isOutOrMerge()) {
 					aggregateIterable.toCollection();
 				} else {
 					aggregateIterable.first();
